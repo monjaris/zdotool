@@ -20,10 +20,10 @@ inline constexpr std::string_view version = "0.1.0";
 inline constexpr std::string_view program = "zdotool";
 inline constexpr std::string_view daemon_program = "zdotool daemon";
 
-inline constexpr std::string_view socket_env = "YDOTOOL_SOCKET";
+inline constexpr std::string_view socket_env = "ZDOTOOL_SOCKET";
 inline constexpr std::string_view runtime_dir_env = "XDG_RUNTIME_DIR";
-inline constexpr std::string_view socket_file = ".ydotool_socket";
-inline constexpr std::string_view default_socket = "/tmp/.ydotool_socket";
+inline constexpr std::string_view socket_file = ".zdotool_socket";
+inline constexpr std::string_view default_socket = "/tmp/.zdotool_socket";
 
 inline constexpr int default_click_repeat = 1;
 inline constexpr int default_click_delay_ms = 25;
@@ -84,7 +84,7 @@ inline std::optional<int> parse_int(std::string_view text, int base = 10) {
     return value;
 }
 
-// Resolve the daemon socket path from the environment, matching ydotool.
+// Resolve the daemon socket path from the environment.
 inline std::string socket_path() {
     if (const char* path = std::getenv(socket_env.data()); path != nullptr && *path != '\0') {
         return path;

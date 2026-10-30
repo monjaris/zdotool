@@ -21,7 +21,7 @@
 namespace {
 
 constexpr std::size_t socket_path_max = sizeof(sockaddr_un::sun_path);
-constexpr const char* device_name = "ydotoold virtual device";
+constexpr const char* device_name = "zdotool virtual device";
 
 struct UinputSetup {
     bool keyboard = true;
@@ -256,7 +256,7 @@ void disable_pointer_acceleration() {
 
     const pid_t child = ::fork();
     if (child == 0) {
-        ::execl(xinput_path, "xinput", "--set-prop", "pointer:ydotoold virtual device",
+        ::execl(xinput_path, "xinput", "--set-prop", "pointer:zdotool virtual device",
                 "libinput Accel Profile Enabled", "0,", "1", static_cast<char*>(nullptr));
         ::_exit(2);
     }

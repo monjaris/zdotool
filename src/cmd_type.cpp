@@ -158,7 +158,7 @@ int zdotool::cmd_type(Client& client, int argc, char** argv) {
     }
 
     // Escape sequences are enabled for command-line strings and disabled for
-    // files, matching ydotool.
+    // files.
     const bool escape = escape_option ? (*escape_option != 0) : !file_path.has_value();
 
     if (file_path) {

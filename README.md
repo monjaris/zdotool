@@ -1,12 +1,10 @@
 # zdotool
 
-A small C++23 port of [ydotool](https://github.com/ReimuNotMoe/ydotool): a
-Linux command-line automation tool that injects input through `uinput`, with no
-X11 or Wayland dependency.
+A small C++23 Linux command-line automation tool that injects input through
+`uinput`, with no X11 or Wayland dependency.
 
 `zdotool` talks to a long-running `zdotool daemon` over a Unix datagram socket.
-The socket path, wire format, and virtual-device name are compatible with
-ydotool, so existing udev rules and compositor configuration keep working.
+The socket path, wire format, and virtual-device name are all zdotool-specific.
 
 ## Commands
 
@@ -62,9 +60,9 @@ zdotool key 29:1 56:1 59:1 59:0 56:0 29:0
 The daemon chooses its socket path in this order:
 
 1. `-p PATH` on the command line
-2. `$YDOTOOL_SOCKET`
-3. `$XDG_RUNTIME_DIR/.ydotool_socket`
-4. `/tmp/.ydotool_socket`
+2. `$ZDOTOOL_SOCKET`
+3. `$XDG_RUNTIME_DIR/.zdotool_socket`
+4. `/tmp/.zdotool_socket`
 
 The client and daemon use the same resolution, so they normally find each other
 without extra configuration.
@@ -78,15 +76,8 @@ Example service files are in `packaging/`:
 
 They assume `zdotool` is installed in `/usr/local/bin`.
 
-## Compatibility with ydotool
-
-The client/daemon protocol and the virtual device name
-(`ydotoold virtual device`) are unchanged. This means `zdotool` can talk to a
-running `ydotoold`, and `ydotool` can talk to `zdotool daemon`. The command-line
-interface follows ydotool, with the program names changed.
-
 ## License
 
 AGPL-3.0. See [LICENSE.txt](LICENSE.txt).
 
-This project is based on ydotool by ReimuNotMoe and contributors.
+This project is derived from ydotool by ReimuNotMoe and contributors.
