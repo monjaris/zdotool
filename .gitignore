@@ -2,9 +2,9 @@
 /.xmake
 /.cache
 /build
+/compile_commands.json
 
 # artifacts
 *.a
 *.so
 /zdotool
-/zdotool-daemon

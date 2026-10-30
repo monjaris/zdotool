@@ -1,126 +1,100 @@
 #include "zdotool.hpp"
-#include "help.hpp"
 
-static void show_help() {
-    puts(
-        help::mousemove
-    );
-}
+#include <array>
+#include <cstddef>
+#include <cstdint>
+#include <limits>
+#include <optional>
+#include <print>
 
-int tool_mousemove(int argc, char** argv) {
-    if (argc < 2) {
-        show_help();
+namespace {
+
+constexpr std::array specs{
+    zdotool::OptSpec{"-w", "--wheel", false},
+    zdotool::OptSpec{"-a", "--absolute", false},
+    zdotool::OptSpec{"-x", "--xpos", true},
+    zdotool::OptSpec{"-y", "--ypos", true},
+    zdotool::OptSpec{"-h", "--help", false},
+};
+
+constexpr auto absolute_reset = std::numeric_limits<std::int32_t>::min();
+
+} // namespace
+
+int zdotool::cmd_mousemove(Client& client, int argc, char** argv) {
+    Args args{argc, argv, specs};
+
+    if (!args.parse()) {
+        std::println(stderr, "mousemove: {}", args.error());
+        return 1;
+    }
+
+    if (args.has("-h", "--help")) {
+        std::print("{}", help::mousemove);
         return 0;
     }
 
-    int is_abs = 0;
-    int is_wheel = 0;
+    const bool absolute = args.has("-a", "--absolute");
+    const bool wheel = args.has("-w", "--wheel");
 
-    int i = 0;
-    int32_t pos[2] = {0, 0};
-
-    while (1) {
-        int c;
-
-        static struct option long_options[] = {
-            {"absolute", no_argument, 0, 'a'},
-            {"help", no_argument, 0, 'h'},
-            {"wheel", no_argument, 0, 'w'},
-            {"xpos", required_argument, 0, 'x'},
-            {"ypos", required_argument, 0, 'y'},
-            {0, 0, 0, 0}
-        };
-        /* getopt_long stores the option index here. */
-        int option_index = 0;
-
-        c = getopt_long (argc, argv, "hawx:y:",
-                 long_options, &option_index);
-
-        /* Detect the end of the options. */
-        if (c == -1)
-            break;
-
-        switch (c) {
-            case 0:
-                /* If this option set a flag, do nothing else now. */
-                if (long_options[option_index].flag != 0)
-                    break;
-                printf ("option %s", long_options[option_index].name);
-                if (optarg)
-                    printf (" with arg %s", optarg);
-                printf ("\n");
-                break;
-            case 'a':
-                is_abs = 1;
-                break;
-
-            case 'h':
-                show_help();
-                return 0;
-
-            case 'w':
-                is_wheel = 1;
-                break;
-            case 'x':
-                if (i >= 2) {
-                    show_help();
-                    return 1;
-                }
-                pos[0] = strtol(optarg, NULL, 10);
-                i++;
-                break;
-            case 'y':
-                if (i >= 2) {
-                    show_help();
-                    return 1;
-                }
-                pos[1] = strtol(optarg, NULL, 10);
-                i++;
-                break;
-
-            case '?':
-                /* getopt_long already printed an error message. */
-                break;
-
-            default:
-                abort();
-        }
+    std::array<std::optional<int>, 2> coordinates{
+        args.int_value("-x", "--xpos"),
+        args.int_value("-y", "--ypos"),
+    };
+    if (!args.ok()) {
+        std::println(stderr, "mousemove: {}", args.error());
+        return 1;
     }
 
-
-
-    if (optind < argc) {
-        while (optind < argc) {
-            if (i >= 2) {
-                show_help();
-                return 1;
-            }
-            pos[i] = strtol(argv[optind++], NULL, 10);
-            i++;
-        }
-    }
-
-    if (i == 2) {
-        if (is_abs && is_wheel) {
-            puts("Mouse wheel moves should not be absolute values");
+    for (const auto& text : args.positional()) {
+        const std::size_t index = coordinates[0] ? 1U : 0U;
+        if (coordinates[index]) {
+            std::println(stderr, "mousemove: too many coordinates");
             return 1;
         }
 
-        if (is_abs) {
-            uinput_emit(EV_REL, REL_X, INT32_MIN, 0);
-            uinput_emit(EV_REL, REL_Y, INT32_MIN, 1);
+        const auto value = parse_int(text);
+        if (!value) {
+            std::println(stderr, "mousemove: invalid coordinate '{}'", text);
+            return 1;
         }
+        coordinates[index] = *value;
+    }
 
-        if (is_wheel) {
-            uinput_emit(EV_REL, REL_HWHEEL, pos[0], 0);
-            uinput_emit(EV_REL, REL_WHEEL, pos[1], 1);
-        } else {
-            uinput_emit(EV_REL, REL_X, pos[0], 0);
-            uinput_emit(EV_REL, REL_Y, pos[1], 1);
+    if (!coordinates[0] && !coordinates[1] && args.positional().empty()) {
+        std::print("{}", help::mousemove);
+        return 0;
+    }
+    if (!coordinates[0] || !coordinates[1]) {
+        std::println(stderr, "mousemove: both x and y are required");
+        return 1;
+    }
+
+    if (absolute && wheel) {
+        std::println(stderr, "mousemove: the wheel cannot be absolute");
+        return 1;
+    }
+
+    const int x = *coordinates[0];
+    const int y = *coordinates[1];
+
+    if (absolute) {
+        if (!client.emit(EV_REL, REL_X, absolute_reset, false) ||
+            !client.emit(EV_REL, REL_Y, absolute_reset, true)) {
+            return 1;
+        }
+    }
+
+    if (wheel) {
+        if (!client.emit(EV_REL, REL_HWHEEL, x, false) ||
+            !client.emit(EV_REL, REL_WHEEL, y, true)) {
+            return 1;
         }
     } else {
-        show_help();
-        return 1;
+        if (!client.emit(EV_REL, REL_X, x, false) ||
+            !client.emit(EV_REL, REL_Y, y, true)) {
+            return 1;
+        }
     }
 
     return 0;

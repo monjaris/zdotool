@@ -1,115 +1,107 @@
 #include "zdotool.hpp"
-#include "help.hpp"
 
+#include <array>
+#include <cstdint>
+#include <optional>
+#include <print>
+#include <string_view>
+#include <vector>
 
-static void show_help() {
-    puts(
-        help::click
-    );
+namespace {
+
+constexpr std::array specs{
+    zdotool::OptSpec{"-r", "--repeat", true},
+    zdotool::OptSpec{"-D", "--next-delay", true},
+    zdotool::OptSpec{"-P", "--press-release", false},
+    zdotool::OptSpec{"-h", "--help", false},
+};
+
+std::optional<int> parse_button(std::string_view text) {
+    if (text.starts_with("0x") || text.starts_with("0X")) {
+        text.remove_prefix(2);
+    }
+    if (text.empty()) {
+        return std::nullopt;
+    }
+    return zdotool::parse_int(text, 16);
 }
 
-int tool_click(int argc, char** argv) {
-    if (argc < 2) {
-        show_help();
+bool click_once(zdotool::Client& client, int button, int delay_ms, bool press_release) {
+    const auto keycode = static_cast<std::uint16_t>((button & 0xf) | BTN_LEFT);
+
+    if (press_release) {
+        if (!client.emit(EV_KEY, keycode, 1, true)) {
+            return false;
+        }
+        if (!client.emit(EV_KEY, keycode, 0, true)) {
+            return false;
+        }
+        zdotool::sleep_ms(delay_ms);
+        return true;
+    }
+
+    if ((button & 0x40) != 0) {
+        if (!client.emit(EV_KEY, keycode, 1, true)) {
+            return false;
+        }
+        zdotool::sleep_ms(delay_ms);
+    }
+    if ((button & 0x80) != 0) {
+        if (!client.emit(EV_KEY, keycode, 0, true)) {
+            return false;
+        }
+        zdotool::sleep_ms(delay_ms);
+    }
+    if ((button & 0xc0) == 0) {
+        zdotool::sleep_ms(delay_ms);
+    }
+    return true;
+}
+
+} // namespace
+
+int zdotool::cmd_click(Client& client, int argc, char** argv) {
+    Args args{argc, argv, specs};
+
+    if (!args.parse()) {
+        std::println(stderr, "click: {}", args.error());
+        return 1;
+    }
+
+    if (args.has("-h", "--help") || args.positional().empty()) {
+        std::print("{}", help::click);
         return 0;
     }
 
-    int repeats = 1;
-    int next_delay_ms = 25;
-    bool press_release = 0;
-
-    while (1) {
-        int c;
-
-        static struct option long_options[] = {
-            {"repeat", required_argument, 0, 'r'},
-            {"next-delay", required_argument, 0, 'D'},
-            {"press-release", no_argument, 0, 'P'},
-            {"help", no_argument, 0, 'h'},
-            {0, 0, 0, 0}
-        };
-        /* getopt_long stores the option index here. */
-        int option_index = 0;
-
-        c = getopt_long (argc, argv, "hPr:D:",
-                 long_options, &option_index);
-
-        /* Detect the end of the options. */
-        if (c == -1)
-            break;
-
-        switch (c) {
-            case 0:
-                /* If this option set a flag, do nothing else now. */
-                if (long_options[option_index].flag != 0)
-                    break;
-                printf ("option %s", long_options[option_index].name);
-                if (optarg)
-                    printf (" with arg %s", optarg);
-                printf ("\n");
-                break;
-            case 'r':
-                repeats = strtol(optarg, NULL, 10);
-                break;
-
-            case 'D':
-                next_delay_ms = strtol(optarg, NULL, 10);
-                break;
-            
-            case 'P':
-                press_release = 1;
-                break;
-
-            case 'h':
-                show_help();
-                exit(0);
-                break;
-
-            case '?':
-                /* getopt_long already printed an error message. */
-                break;
-
-            default:
-                abort();
-        }
+    const int repeats = args.get_int("-r", "--repeat", default_click_repeat);
+    const int delay_ms = args.get_int("-D", "--next-delay", default_click_delay_ms);
+    if (!args.ok()) {
+        std::println(stderr, "click: {}", args.error());
+        return 1;
+    }
+    if (repeats < 0 || delay_ms < 0) {
+        std::println(stderr, "click: repeat and delay must be non-negative");
+        return 1;
     }
 
-    if (optind < argc) {
-        int optind_save = optind;
+    std::vector<int> buttons;
+    buttons.reserve(args.positional().size());
+    for (const auto& text : args.positional()) {
+        const auto button = parse_button(text);
+        if (!button) {
+            std::println(stderr, "click: invalid button '{}'", text);
+            return 1;
+        }
+        buttons.push_back(*button);
+    }
 
-        for (int i=0; i<repeats; i++) {
-            optind = optind_save;
-            while (optind < argc) {
-                int key = strtol(argv[optind++], NULL, 16);
-                int keycode = (key & 0xf) | 0x110;
-
-                if (press_release) {
-                    printf("Click Event %d\n", i);
-                    uinput_emit(EV_KEY, keycode, 1, 1);
-                    uinput_emit(EV_KEY, keycode, 0, 1);
-                    usleep(next_delay_ms * 1000);
-                    continue;
-                }
-
-                if (key & 0x40) {
-                    uinput_emit(EV_KEY, keycode, 1, 1);
-                    usleep(next_delay_ms * 1000);
-                }
-
-                if (key & 0x80) {
-                    uinput_emit(EV_KEY, keycode, 0, 1);
-                    usleep(next_delay_ms * 1000);
-                }
-
-                if ((key & 0xc0) == 0) {
-                    usleep(next_delay_ms * 1000);
-                }
-
-                printf("%x %x\n", key, keycode);
+    const bool press_release = args.has("-P", "--press-release");
+    for (int i = 0; i < repeats; ++i) {
+        for (const int button : buttons) {
+            if (!click_once(client, button, delay_ms, press_release)) {
+                return 1;
             }
         }
-    } else {
-        show_help();
     }
 
     return 0;

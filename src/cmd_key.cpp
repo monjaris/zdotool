@@ -1,98 +1,87 @@
 #include "zdotool.hpp"
-#include "help.hpp"
 
-static void show_help() {
-    puts(
-        help::key
-    );
+#include <array>
+#include <cstdint>
+#include <optional>
+#include <print>
+#include <string_view>
+#include <vector>
+
+namespace {
+
+constexpr std::array specs{
+    zdotool::OptSpec{"-d", "--key-delay", true},
+    zdotool::OptSpec{"-h", "--help", false},
+};
+
+struct KeyStroke {
+    std::uint16_t code = 0;
+    bool pressed = true;
+};
+
+std::optional<KeyStroke> parse_key(std::string_view text) {
+    bool pressed = true;
+
+    if (const auto colon = text.find(':'); colon != std::string_view::npos) {
+        pressed = text.substr(colon + 1) != "0";
+        text = text.substr(0, colon);
+    }
+
+    int base = 10;
+    if (text.starts_with("0x") || text.starts_with("0X")) {
+        base = 16;
+        text.remove_prefix(2);
+    }
+
+    const auto code = zdotool::parse_int(text, base);
+    if (!code || *code < 0 || *code > 0xffff) {
+        return std::nullopt;
+    }
+
+    return KeyStroke{static_cast<std::uint16_t>(*code), pressed};
 }
 
+} // namespace
 
-int tool_key(int argc, char** argv) {
-    if (argc < 2) {
-        show_help();
+int zdotool::cmd_key(Client& client, int argc, char** argv) {
+    Args args{argc, argv, specs};
+
+    if (!args.parse()) {
+        std::println(stderr, "key: {}", args.error());
+        return 1;
+    }
+
+    if (args.has("-h", "--help") || args.positional().empty()) {
+        std::print("{}", help::key);
         return 0;
     }
 
-    int key_delay = 12;
-
-    while (1) {
-        int c;
-
-        static struct option long_options[] = {
-            {"key-delay", required_argument, 0, 'd'},
-            {"file", required_argument, 0, 'f'},
-            {"help", no_argument, 0, 'h'},
-            {0, 0, 0, 0}
-        };
-        /* getopt_long stores the option index here. */
-        int option_index = 0;
-
-        c = getopt_long (argc, argv, "hd:",
-                 long_options, &option_index);
-
-        /* Detect the end of the options. */
-        if (c == -1)
-            break;
-
-        switch (c) {
-            case 0:
-                /* If this option set a flag, do nothing else now. */
-                if (long_options[option_index].flag != 0)
-                    break;
-                printf ("option %s", long_options[option_index].name);
-                if (optarg)
-                    printf (" with arg %s", optarg);
-                printf ("\n");
-                break;
-            case 'D':
-                key_delay = strtol(optarg, NULL, 10);
-                break;
-
-            case 'd':
-                key_delay = strtol(optarg, NULL, 10);
-                break;
-
-            case 'h':
-                show_help();
-                exit(0);
-                break;
-
-            case '?':
-                /* getopt_long already printed an error message. */
-                break;
-
-            default:
-                abort();
-        }
+    const int delay_ms = args.get_int("-d", "--key-delay", default_key_command_delay_ms);
+    if (!args.ok()) {
+        std::println(stderr, "key: {}", args.error());
+        return 1;
+    }
+    if (delay_ms < 0) {
+        std::println(stderr, "key: delay must be non-negative");
+        return 1;
     }
 
-
-    if (optind < argc) {
-        while (optind < argc) {
-            char* pstr = argv[optind++];
-            uint16_t kc;
-            if (strchr(pstr, 'x')) {
-                kc = strtol(pstr, NULL, 16);
-            } else {
-                kc = strtol(pstr, NULL, 10);
-            }
-
-            size_t slen = strlen(pstr);
-            if (slen) {
-                char cen = pstr[slen-1];
-
-                if (cen == '0') {
-                    uinput_emit(EV_KEY, kc, 0, 1);
-                } else {
-                    uinput_emit(EV_KEY, kc, 1, 1);
-                }
-            }
-
-            usleep(key_delay * 1000);
+    std::vector<KeyStroke> strokes;
+    strokes.reserve(args.positional().size());
+    for (const auto& text : args.positional()) {
+        const auto stroke = parse_key(text);
+        if (!stroke) {
+            std::println(stderr, "key: invalid keycode '{}'", text);
+            return 1;
         }
-    } else {
-        show_help();
+        strokes.push_back(*stroke);
+    }
+
+    for (const auto& stroke : strokes) {
+        if (!client.emit(EV_KEY, stroke.code, stroke.pressed ? 1 : 0, true)) {
+            return 1;
+        }
+        sleep_ms(delay_ms);
     }
 
     return 0;
