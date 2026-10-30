@@ -1,11 +1,10 @@
-CMakeCache.txt
-CMakeFiles/
-CPackConfig.cmake
-CPackSourceConfig.cmake
-Makefile
-cmake_install.cmake
-libydotool.a
-libydotool.so
-ydotool
-ydotoold
-build/*
+# temp dirs
+/.xmake
+/.cache
+/build
+
+# artifacts
+*.a
+*.so
+/zdotool
+/zdotool-daemon

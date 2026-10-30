@@ -1,45 +1,9 @@
-/*
-    This file is part of ydotool.
-    Copyright (C) 2018-2022 Reimu NotMoe <reimu@sudomaker.com>
-
-    This program is free software: you can redistribute it and/or modify
-    it under the terms of the GNU Affero General Public License as
-    published by the Free Software Foundation, either version 3 of the
-    License, or (at your option) any later version.
-
-    This program is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU Affero General Public License for more details.
-
-    You should have received a copy of the GNU Affero General Public License
-    along with this program.  If not, see <https://www.gnu.org/licenses/>.
-*/
-
-/*
-    Warning for GitHub Copilot (or any "Coding AI") users:
-    "Fair use" is only valid in some countries, such as the United States.
-    This program is protected by copyright law and international treaties.
-    Unauthorized reproduction or distribution of this program (e.g. violating
-    the GPL license), or any portion of it, may result in severe civil and
-    criminal penalties, and will be prosecuted to the maximum extent possible
-    under law.
-*/
-
-/*
-    对 GitHub Copilot（或任何“用于编写代码的人工智能软件”）用户的警告：
-    “合理使用”只在一些国家有效，如美国。
-    本程序受版权法和国际条约的保护。
-    未经授权复制或分发本程序（如违反GPL许可），或其任何部分，可能导致严重的民事和刑事处罚，
-    并将在法律允许的最大范围内被起诉。
-*/
-
-#include "ydotool.h"
+#include "zdotool.hpp"
 #include <string.h>
 
 #define FLAG_UPPERCASE		0x80000000
 
-static const int32_t ascii2keycode_map[128] = {
+static const int64_t ascii2keycode_map[128] = {
 	// 00 - 0f
 	-1,-1,-1,-1,-1,-1,-1,-1,
 	-1,KEY_TAB,KEY_ENTER,-1,-1,-1,-1,-1,
@@ -78,32 +42,7 @@ static int opt_key_hold_ms = 20;
 static int opt_next_delay_ms = 0;
 
 static void show_help() {
-	puts(
-		"Usage: type [OPTION]... [STRINGS]...\n"
-		"Type strings.\n"
-		"\n"
-		"Options:");
-
-	printf(
-		"  -d, --key-delay=N          Delay N milliseconds between keys (the delay between every key down/up pair) (default: %d)\n", opt_key_delay_ms
-	);
-
-	printf(
-		"  -H, --key-hold=N           Hold each key for N milliseconds (the delay between key down and up) (default: %d)\n", opt_key_hold_ms
-	);
-
-	printf(
-		"  -D, --next-delay=N         Delay N milliseconds between command line strings (default: %d)\n", opt_next_delay_ms
-	);
-
-	puts(
-		"  -f, --file=PATH            Specify a file, the contents of which will be be typed as if passed as an argument.\n"
-		"                               The filepath may also be '-' to read from stdin\n"
-		"  -e, --escape=BOOL          Escape enable (1) or disable (0)\n"
-		"  -h, --help                 Display this help and exit\n"
-		"\n"
-		"Escape is enabled by default when typing command line arguments, and disabled by default when typing from file and stdin."
-	);
+    
 }
 
 
@@ -173,7 +112,7 @@ static int escape(char in) {
 	}
 }
 
-int tool_type(int argc, char **argv) {
+int tool_type(int argc, char** argv) {
 	if (argc < 2) {
 		show_help();
 		return 0;
@@ -181,7 +120,7 @@ int tool_type(int argc, char **argv) {
 
 
 
-	const char *file_path = NULL;
+	const char* file_path = NULL;
 
 	int enable_escape = -1;
 
@@ -289,7 +228,7 @@ int tool_type(int argc, char **argv) {
 
 		if (optind < argc) {
 			while (optind < argc) {
-				char *pstr = argv[optind++];
+				char* pstr = argv[optind++];
 
 //				printf("pstr: %s\n", pstr);
 

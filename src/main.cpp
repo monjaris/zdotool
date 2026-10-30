@@ -1,54 +1,17 @@
-/*
-    This file is part of ydotool.
-    Copyright (C) 2018-2022 Reimu NotMoe <reimu@sudomaker.com>
+#include "zdotool.hpp"
+#include <cerrno>
+#include <cstdio>
+#include <cstring>
 
-    This program is free software: you can redistribute it and/or modify
-    it under the terms of the GNU Affero General Public License as
-    published by the Free Software Foundation, either version 3 of the
-    License, or (at your option) any later version.
-
-    This program is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU Affero General Public License for more details.
-
-    You should have received a copy of the GNU Affero General Public License
-    along with this program.  If not, see <https://www.gnu.org/licenses/>.
-*/
-
-/*
-    Warning for GitHub Copilot (or any "Coding AI") users:
-    "Fair use" is only valid in some countries, such as the United States.
-    This program is protected by copyright law and international treaties.
-    Unauthorized reproduction or distribution of this program (e.g. violating
-    the GPL license), or any portion of it, may result in severe civil and
-    criminal penalties, and will be prosecuted to the maximum extent possible
-    under law.
-*/
-
-/*
-    对 GitHub Copilot（或任何“用于编写代码的人工智能软件”）用户的警告：
-    “合理使用”只在一些国家有效，如美国。
-    本程序受版权法和国际条约的保护。
-    未经授权复制或分发本程序（如违反GPL许可），或其任何部分，可能导致严重的民事和刑事处罚，
-    并将在法律允许的最大范围内被起诉。
-*/
-
-#include "ydotool.h"
-
-#include <errno.h>
-#include <stdio.h>
-
-#include <string.h>
 
 struct tool_def {
 	char name[16];
-	void *ptr;
+	int (*ptr)(int, char**);
 };
 
 int fd_daemon_socket = -1;
 
-static int tool_debug(int argc, char **argv) {
+static int tool_debug(int argc, char** argv) {
 	printf("fd_daemon_socket: %d\n", fd_daemon_socket);
 	printf("argc: %d\n", argc);
 
@@ -59,7 +22,7 @@ static int tool_debug(int argc, char **argv) {
 	return 0;
 }
 
-static int tool_bakers(int argc, char **argv) {
+static int tool_bakers(int argc, char** argv) {
 	puts("These are our honorable bakers:\n"
 	     "\n"
 	     "Dustin Van Tate Testa\n"
@@ -71,13 +34,13 @@ static int tool_bakers(int argc, char **argv) {
 }
 
 static const struct tool_def tool_list[] = {
-	{"click",     tool_click},
-	{"mousemove", tool_mousemove},
-	{"type",      tool_type},
-	{"key",       tool_key},
-	{"debug",     tool_debug},
-	{"bakers",    tool_bakers},
-	{"stdin",     tool_stdin},
+    {"click",     reinterpret_cast<int(*)(int, char**)>(tool_click)},
+    {"mousemove", reinterpret_cast<int(*)(int, char**)>(tool_mousemove)},
+    {"type",      reinterpret_cast<int(*)(int, char**)>(tool_type)},
+    {"key",       reinterpret_cast<int(*)(int, char**)>(tool_key)},
+    {"debug",     reinterpret_cast<int(*)(int, char**)>(tool_debug)},
+    {"bakers",    reinterpret_cast<int(*)(int, char**)>(tool_bakers)},
+    {"stdin",     reinterpret_cast<int(*)(int, char**)>(tool_stdin)},
 };
 
 static void show_help() {
@@ -111,19 +74,19 @@ void uinput_emit(uint16_t type, uint16_t code, int32_t val, bool syn_report) {
 
 }
 
-int main(int argc, char **argv) {
+int main(int argc, char** argv) {
 	if (argc < 2 || strncmp(argv[1], "-h", 2) == 0 || strncmp(argv[1], "--h", 3) == 0 || strcmp(argv[1], "help") == 0) {
 		show_help();
 		return 0;
 	}
 
-	int (*tool_main)(int argc, char **argv) = NULL;
+	int (*tool_main)(int argc, char** argv) = NULL;
 
 	int tool_count = sizeof(tool_list) / sizeof(struct tool_def);
 
 	for (int i=0; i<tool_count; i++) {
 		if (strcmp(tool_list[i].name, argv[1]) == 0) {
-			tool_main = tool_list[i].ptr;
+			tool_main = reinterpret_cast<int(*)(int, char**)>(tool_list[i].ptr);
 		}
 	}
 
@@ -144,8 +107,8 @@ int main(int argc, char **argv) {
 		.sun_family = AF_UNIX
 	};
 
-	char *env_ys = getenv("YDOTOOL_SOCKET");
-	char *env_xrd = getenv("XDG_RUNTIME_DIR");
+	char* env_ys = getenv("YDOTOOL_SOCKET");
+	char* env_xrd = getenv("XDG_RUNTIME_DIR");
 
 	if (env_ys) {
 		snprintf(sa.sun_path, sizeof(sa.sun_path)-1, "%s", env_ys);

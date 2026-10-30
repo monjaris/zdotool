@@ -1,0 +1,36 @@
+[
+{
+  "directory": "/home/ziya/dev/main/zdotool",
+  "arguments": ["/usr/bin/g++", "-c", "-m64", "-Iinclude", "-I", "/home/ziya/.xmake/packages/c/clixx/@default/4e0143c97b65425b855ad5fd03038b6a/include", "-std=c++23", "-fno-exceptions", "-fno-rtti", "-o", "build/.objs/zdotool/linux/x86_64/release/src/main.cpp.o", "src/main.cpp"],
+  "file": "src/main.cpp"
+},
+{
+  "directory": "/home/ziya/dev/main/zdotool",
+  "arguments": ["/usr/bin/g++", "-c", "-m64", "-Iinclude", "-I", "/home/ziya/.xmake/packages/c/clixx/@default/4e0143c97b65425b855ad5fd03038b6a/include", "-std=c++23", "-fno-exceptions", "-fno-rtti", "-o", "build/.objs/zdotool/linux/x86_64/release/src/cmd_click.cpp.o", "src/cmd_click.cpp"],
+  "file": "src/cmd_click.cpp"
+},
+{
+  "directory": "/home/ziya/dev/main/zdotool",
+  "arguments": ["/usr/bin/g++", "-c", "-m64", "-Iinclude", "-I", "/home/ziya/.xmake/packages/c/clixx/@default/4e0143c97b65425b855ad5fd03038b6a/include", "-std=c++23", "-fno-exceptions", "-fno-rtti", "-o", "build/.objs/zdotool/linux/x86_64/release/src/cmd_daemon.cpp.o", "src/cmd_daemon.cpp"],
+  "file": "src/cmd_daemon.cpp"
+},
+{
+  "directory": "/home/ziya/dev/main/zdotool",
+  "arguments": ["/usr/bin/g++", "-c", "-m64", "-Iinclude", "-I", "/home/ziya/.xmake/packages/c/clixx/@default/4e0143c97b65425b855ad5fd03038b6a/include", "-std=c++23", "-fno-exceptions", "-fno-rtti", "-o", "build/.objs/zdotool/linux/x86_64/release/src/cmd_key.cpp.o", "src/cmd_key.cpp"],
+  "file": "src/cmd_key.cpp"
+},
+{
+  "directory": "/home/ziya/dev/main/zdotool",
+  "arguments": ["/usr/bin/g++", "-c", "-m64", "-Iinclude", "-I", "/home/ziya/.xmake/packages/c/clixx/@default/4e0143c97b65425b855ad5fd03038b6a/include", "-std=c++23", "-fno-exceptions", "-fno-rtti", "-o", "build/.objs/zdotool/linux/x86_64/release/src/cmd_mousemove.cpp.o", "src/cmd_mousemove.cpp"],
+  "file": "src/cmd_mousemove.cpp"
+},
+{
+  "directory": "/home/ziya/dev/main/zdotool",
+  "arguments": ["/usr/bin/g++", "-c", "-m64", "-Iinclude", "-I", "/home/ziya/.xmake/packages/c/clixx/@default/4e0143c97b65425b855ad5fd03038b6a/include", "-std=c++23", "-fno-exceptions", "-fno-rtti", "-o", "build/.objs/zdotool/linux/x86_64/release/src/cmd_stdin.cpp.o", "src/cmd_stdin.cpp"],
+  "file": "src/cmd_stdin.cpp"
+},
+{
+  "directory": "/home/ziya/dev/main/zdotool",
+  "arguments": ["/usr/bin/g++", "-c", "-m64", "-Iinclude", "-I", "/home/ziya/.xmake/packages/c/clixx/@default/4e0143c97b65425b855ad5fd03038b6a/include", "-std=c++23", "-fno-exceptions", "-fno-rtti", "-o", "build/.objs/zdotool/linux/x86_64/release/src/cmd_type.cpp.o", "src/cmd_type.cpp"],
+  "file": "src/cmd_type.cpp"
+}]
