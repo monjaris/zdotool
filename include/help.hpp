@@ -18,13 +18,20 @@ Options:
   -P, --press-release        Press and release in a single step
   -h, --help                 Display this help and exit
 
-Buttons are hexadecimal values with an optional bit mask:
+Buttons can be names or hexadecimal values with an optional bit mask:
+  L/LEFT, R/RIGHT, M/MIDDLE, X/EXTRA
+  S/SIDE, F/FORWARD, B/BACK, T/TASK
+  Names perform a full click.
+
+Numeric values:
   0x00 LEFT, 0x01 RIGHT, 0x02 MIDDLE, 0x03 SIDE
   0x04 EXTRA, 0x05 FORWARD, 0x06 BACK, 0x07 TASK
   0x40 press only, 0x80 release only, 0xC0 press and release
   0x00 does nothing but still waits for --next-delay
 
 Examples:
+  L      left click
+  R      right click
   0xC0   left click
   0x41   right button down
   0x82   middle button up

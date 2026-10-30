@@ -1,9 +1,11 @@
 #include "zdotool.hpp"
 
 #include <array>
+#include <cctype>
 #include <cstdint>
 #include <optional>
 #include <print>
+#include <string>
 #include <string_view>
 #include <vector>
 
@@ -16,7 +18,46 @@ constexpr std::array specs{
     zdotool::OptSpec{"-h", "--help", false},
 };
 
+struct ButtonName {
+    std::string_view name;
+    int value;
+};
+
+constexpr std::array button_names{
+    ButtonName{"l", 0xc0},
+    ButtonName{"left", 0xc0},
+    ButtonName{"r", 0xc1},
+    ButtonName{"right", 0xc1},
+    ButtonName{"m", 0xc2},
+    ButtonName{"middle", 0xc2},
+    ButtonName{"s", 0xc3},
+    ButtonName{"side", 0xc3},
+    ButtonName{"x", 0xc4},
+    ButtonName{"extra", 0xc4},
+    ButtonName{"f", 0xc5},
+    ButtonName{"forward", 0xc5},
+    ButtonName{"b", 0xc6},
+    ButtonName{"back", 0xc6},
+    ButtonName{"t", 0xc7},
+    ButtonName{"task", 0xc7},
+};
+
+std::string lowercase(std::string_view text) {
+    std::string result{text};
+    for (char& character : result) {
+        character = static_cast<char>(std::tolower(static_cast<unsigned char>(character)));
+    }
+    return result;
+}
+
 std::optional<int> parse_button(std::string_view text) {
+    const std::string name = lowercase(text);
+    for (const auto& button : button_names) {
+        if (name == button.name) {
+            return button.value;
+        }
+    }
+
     if (text.starts_with("0x") || text.starts_with("0X")) {
         text.remove_prefix(2);
     }

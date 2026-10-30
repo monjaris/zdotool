@@ -52,7 +52,7 @@ Then inject input:
 
 ```sh
 zdotool mousemove -x 100 -y 100
-zdotool click 0xC0
+zdotool click L
 zdotool type 'hello'
 zdotool key 29:1 56:1 59:1 59:0 56:0 29:0
 ```
