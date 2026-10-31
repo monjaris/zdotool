@@ -76,8 +76,6 @@ public:
             return false;
         }
 
-        cli_->parse();
-
         for (const auto& value : cli_->values()) {
             positional_.emplace_back(clean(value.str()));
         }
